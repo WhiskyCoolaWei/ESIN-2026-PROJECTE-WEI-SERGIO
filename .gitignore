@@ -1,0 +1,16 @@
+# Archivos objeto y dependencias generadas
+obj/
+*.o
+*.d
+
+# Ejecutables generados
+*.e
+*.out
+
+# Archivos temporales de macOS
+.DS_Store
+._*
+
+# Archivos temporales de editores
+*.swp
+*.tmp
