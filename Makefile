@@ -1,8 +1,8 @@
-
 # ==========================================
 # CONFIGURACIO DEL PROJECTE
 # ==========================================
 
+# Al STIC, canvieu-ho per g++ (o g++-13) si cal.
 CXX := g++-11
 
 TARGET := penjat.e
@@ -10,18 +10,22 @@ TARGET := penjat.e
 SRC_DIR := src
 OBJ_DIR := obj
 INC_DIR := include
+ESIN_INC_DIR := incl
+LIB_DIR := lib
 
 # ==========================================
 # OPCIONS DE COMPILACIO
 # ==========================================
 
-CPPFLAGS := -I$(INC_DIR)
+CPPFLAGS := -I$(INC_DIR) -I$(ESIN_INC_DIR)
 CXXFLAGS := -Wall -MMD -MP
 
 # ==========================================
 # OPCIONS D'ENLLACAT
 # ==========================================
 
+# -rpath: perque l'executable trobi libesin.so en temps d'execucio
+LDFLAGS := -L$(LIB_DIR) -Wl,-rpath,'$$ORIGIN/$(LIB_DIR)'
 LDLIBS := -lesin
 
 # ==========================================
@@ -51,7 +55,7 @@ all: $(TARGET)
 
 # Enllacat de tots els fitxers objecte
 $(TARGET): $(OBJECTS)
-	$(CXX) -o $@ $^ $(LDLIBS)
+	$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 # Compilacio individual dels fitxers .cpp
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
@@ -63,7 +67,7 @@ endif
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
-# Incorporacio de dependències automatiques
+# Incorporacio de dependencies automatiques
 -include $(DEPS)
 
 # ==========================================
