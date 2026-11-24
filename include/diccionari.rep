@@ -1,0 +1,20 @@
+/*
+    La estructura de datos utilizada son ARBOLES DIGITALES TRIES de PRIMER FILL SEGUENT GERMA
+    con raiz = palabra vacia(VALIDA)
+*/
+
+    struct node {
+        char _c;
+        node* _pf;
+        node* _sg;
+        bool _es_paraula;
+        nat _npal;
+        node(const char &c, node* pf = nullptr, node* sg = nullptr);
+    };
+
+    node* _arrel;
+
+    static node* copia(const node* t);
+    static void esborra_nodes(node* t);
+    static node* insereix_nodes(node* t, nat i, const string& k, bool& es_nova);
+    
