@@ -17,4 +17,3 @@
     static node* copia(const node* t);
     static void esborra_nodes(node* t);
     static node* insereix_nodes(node* t, nat i, const string& k, bool& es_nova);
-    

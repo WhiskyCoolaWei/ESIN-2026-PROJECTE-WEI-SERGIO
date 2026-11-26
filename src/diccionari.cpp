@@ -60,10 +60,45 @@ void diccionari::insereix(const string& p)
         }
     }
 }
-  
+// Devuelve la palabra más larga del diccionario que es prefijo de p.
+// Se baja por el trie siguiendo las letras de p; en cada nivel se busca
+// p[i] entre los hermanos (ordenados), y se recuerda la longitud del último
+// nodo del camino que marca fin de palabra. Si no hay ninguno, devuelve ""
+// (la palabra vacía, que siempre está en el diccionario).
+// Coste: O(L), siendo L = p.size() (hasta 26 hermanos por nivel).
 string diccionari::prefix(const string& p) const
 {
-    
+    const node* it = _arrel->_pf;
+    nat i = 0;
+    nat llarg = 0;
+    bool continua = true;
+    while(continua and it != nullptr and i < p.size())
+    {
+        while(it != nullptr and it->_c < p[i])
+        {   //El caracter es mas grande que el actual, es decir, debe de estar hacia la derecha(si hay)
+            it = it->_sg;
+        }
+        if(it != nullptr and it->_c == p[i])
+        {//Encontramos el caracter, si hasta este extremo es una palabra, margamos la longitud
+            if (it->_es_paraula)
+            {
+                llarg = i + 1;
+            } //bajamos al siguiente nivel de nuestro trie pf-sg
+            it = it->_pf;
+            ++i;
+        }
+        else
+        { //Si El caracter es mas PEQUEÑO que el caracter del nodo actual, quiere decir que no existe en el arbol mas caracteres que coincidan.
+            continua = false;
+        }
+    }
+    string res;
+    //Aqui recorremos la palabra para guardar en res hasta CUÁNTO se ha podido recorrer el prefix.
+    for(nat j = 0; j < llarg; ++j)
+    {
+        res += p[j];
+    }
+    return res;
 }
   
 void diccionari::satisfan_patro(const vector<string>& q, list<string>& L) const
@@ -82,7 +117,39 @@ nat diccionari::num_pal() const noexcept
 
 string diccionari::operator[](nat i) const
 {
-
+    if (i >= num_pal())
+    {
+        throw error(INDEX_INCORRECTE);
+    }
+    const node* t = _arrel;
+    string res;
+    bool trobat = false;
+    while (not trobat)
+    {
+        if (t->_es_paraula)
+        {
+            if (i == 0)
+            {
+                trobat = true;
+            }
+            else
+            {
+                --i;
+            }
+        }
+        if (not trobat)
+        {
+            const node* h = t->_pf;
+            while (i >= h->_npal)
+            {
+                i -= h->_npal;
+                h = h->_sg;
+            }
+            res += h->_c;
+            t = h;
+        }
+    }
+    return res;
 }
 
 
@@ -122,7 +189,7 @@ void diccionari::esborra_nodes(node* t)
 // Coste: O(L), siendo L = k.size() (hasta 26 hermanos por nivel).
 diccionari::node* diccionari::insereix_nodes(node* t, nat i, const string& k, bool& es_nova)
 {
-    if (t != nullptr and t->_c < k[i])
+    if(t != nullptr and t->_c < k[i])
     {
         //Si es un caracter superior al actual nodo, es decir a la derecha, iteramos los hermanos e insertamos a la derecha
         t->_sg = insereix_nodes(t->_sg, i, k, es_nova);
@@ -145,12 +212,12 @@ diccionari::node* diccionari::insereix_nodes(node* t, nat i, const string& k, bo
                                                 Estado inicial: [C]->[D]->[F]->[H]->nullptr 
                                                 Estado final:   [C]->[D]->[F]->[H]->[I]
         */                                          
-        if (t == nullptr or t->_c > k[i])
+        if(t == nullptr or t->_c > k[i])
         {
             t = new node(k[i], nullptr, t);
         }
         //Si llegamos al final de la palabra por insertar
-        if (i == k.size() - 1)
+        if(i == k.size() - 1)
         {
             es_nova = true;
             t->_es_paraula = true;
@@ -160,7 +227,7 @@ diccionari::node* diccionari::insereix_nodes(node* t, nat i, const string& k, bo
             //Si todavia quedan caracteres por insertar de la palabra, seguimos bajando
             t->_pf = insereix_nodes(t->_pf, i + 1, k, es_nova);
         }
-        if (es_nova)
+        if(es_nova)
         {
             ++t->_npal;
         }
