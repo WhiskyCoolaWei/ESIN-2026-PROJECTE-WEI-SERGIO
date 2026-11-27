@@ -17,3 +17,5 @@
     static node* copia(const node* t);
     static void esborra_nodes(node* t);
     static node* insereix_nodes(node* t, nat i, const string& k, bool& es_nova);
+    static void satisfan_patro_nodes(const node* t, nat i, const vector<vector<bool>>& taula, string& paraula, list<string>& L);
+    static void llista_paraules_nodes(const node* t, nat k, string paraula, list<string>& L);

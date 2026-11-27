@@ -102,12 +102,54 @@ string diccionari::prefix(const string& p) const
 }
   
 void diccionari::satisfan_patro(const vector<string>& q, list<string>& L) const
-{
+{//Vaciamos lista por si tiene basura
+    L.clear();
+    if(q.empty())
+    { 
+        L.push_back("");
+    }
+    else
+    { /*
+        Creamos una tabla de booleanos, en el que cada fila es un patron, y cada columna una letra de la A a la Z. De forma que 
+        todos estan inicializados en false. SI es true significa que ese caracter forma parte del patron de la fila en concreto
+        Ej: A..Z, A..Z, AEIOU, S.  Tendriamos una q.size() = 4, en el que para q[0] y q[1] todas las columnas de estas filas serian true, 
+                                    mientras que en la fila q[2] solo estarian a true las columnas A, E, I, O ,U. Y en el caso final solo 
+                                    la columna S.
+        */
+        vector<vector<bool>> taula(q.size(), vector<bool>(26, false));
+        for(nat i = 0; i < q.size(); ++i)
+        {
+            for(nat j = 0; j < q[i].size(); ++j)
+            {
+                //Recorremos la tabla para establecer los patrones.  
+                //Fila i, palabra i, caracter j de la palabra i
+                taula[i][q[i][j] - 'A'] = true;
+            }
+        }
+        string paraula;
+        //En paraula se guarda una palabra encontrada, en L la lista, en 0 el nivel en que esta actualmente(o en cuál caracter de la palabra esta actualmente)
+        satisfan_patro_nodes(_arrel->_pf, 0, taula, paraula, L);
+    }
+}
 
-}                      
+// Deja en L las palabras del diccionario de longitud >= k, en orden
+// alfabético. Recorrido en preorden del trie: la palabra de un nodo se
+// guarda antes que las de sus hijos, y los hermanos se visitan en orden.
+// La palabra vacía (la raíz) solo se incluye si k == 0.
+// Coste: O(N), siendo N el número de nodos del trie.
 void diccionari::llista_paraules(nat k, list<string>& L) const
 {
-
+    L.clear();
+    string paraula = "";
+    if(k == 0)
+    {
+        L.push_back(paraula);
+    }
+    else 
+    {
+        llista_paraules_nodes(_arrel->_pf, k, paraula, L);
+    }
+    return;
 }
 
 nat diccionari::num_pal() const noexcept
@@ -127,7 +169,7 @@ string diccionari::operator[](nat i) const
     while (not trobat)
     {
         if (t->_es_paraula)
-        {
+        {   //Si la palabra buscada esta en la 0, devolvemos instantaneamente
             if (i == 0)
             {
                 trobat = true;
@@ -138,7 +180,16 @@ string diccionari::operator[](nat i) const
             }
         }
         if (not trobat)
-        {
+        { /*
+            Aqui hacemos busqueda con poda, como a cada nodo guardamos el numero de subnodos que tiene, podemos calcular rapidamente a 
+            cual nodo debemos bajar, ej:  queremos la 9, analizamos el primer nodo y este tiene 5 hijos, 9 > 5 , es decir que auqnue visitemos 
+            los hijos de este nodo, a ninguno le pertoca el 9, nisiquiera el 6 porque el maximo es el 5. asi pues saltamos al siguiente hermano
+            no sin antes realizar la resta de 9 - 5 = 4. porque en cada nodo se realiza el mismo criterio de comprobar si en este caso seria 4 > nodo.
+            Pongamos en el caso de que el segundo nodo tiene numero de hijos 6, entonces 4 < 6, por lo que el hijo pertenece al subarbol del nodo actual.
+            
+            Guardamos el caracter del nivel actual, de forma iterativa indicamos que vamos a iterar en el nuevo nodo, es decir, el hijo del actual.
+            En el caso nuestro t = h, en el que t incialmente era la raiz y h su hijo, posteriormente t = nodo actual, y h el hijo del nodo actual
+            */
             const node* h = t->_pf;
             while (i >= h->_npal)
             {
@@ -233,4 +284,57 @@ diccionari::node* diccionari::insereix_nodes(node* t, nat i, const string& k, bo
         }
     }
     return t;
+}
+
+// Pre: t es la lista de hermanos de la posición i; i < taula.size();
+//      paraula contiene las i letras del camino hasta t.
+// Post: añade al final de L, en orden alfabético, las palabras de los
+//       subárboles de t que satisfacen el patrón desde la posición i.
+//       paraula queda como estaba al empezar.
+// Coste: O(V), siendo V el número de nodos visitados.
+void diccionari::satisfan_patro_nodes(const node* t, nat i, const vector<vector<bool>>& taula, string& paraula, list<string>& L)
+{
+    while(t != nullptr)
+    {   //Si el caracter del nodo actual pertenece true a la tabla de la fila actual i:
+        if(taula[i][t->_c - 'A'])
+        { //Guardamos caracter
+            paraula.push_back(t->_c);
+            if(i == taula.size() - 1)
+            { //Si cumple todos los patrones y acaba en palabra
+                if(t->_es_paraula)
+                { //Guardamos
+                    L.push_back(paraula);
+                }
+            }
+            else
+            { // Si no hemos terminado seguimos bajando a sus hijos
+                satisfan_patro_nodes(t->_pf, i + 1, taula, paraula, L);
+            }
+            //Al volver al nivel superior, no debemos guardar el caracter del nivel inferior porque vamos a continuacion a visitar su hermano
+            paraula.pop_back();
+        }
+        t = t->_sg;
+    }
+}
+
+
+// Pre: t es la lista de hermanos de la posición paraula.size();
+//      paraula contiene las letras del camino hasta t.
+// Post: añade al final de L, en orden alfabético, las palabras de longitud
+//       >= k de los subárboles de t y de sus hermanos. paraula queda como
+//       estaba al empezar.
+// Coste: O(n), siendo n el número de nodos de esos subárboles.
+void diccionari::llista_paraules_nodes(node* t, nat k, string paraula, list<string>& L)
+{
+    if(t != nullptr)
+    {
+        paraula.push_back(t->_c);
+        if(t->_es_paraula and paraula.size() >= k)
+        {
+            L.push_back(paraula);
+        }
+        llista_paraules_nodes(t->_pf, k - 1, paraula, L);
+        paraula.pop_back();
+        llista_paraules_nodes(t->_sg, k, paraula, L);
+    }
 }
